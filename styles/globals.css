@@ -1,0 +1,86 @@
+/*
+ * Global styles + design tokens.
+ * The colours below become Tailwind classes, e.g. --color-brand-600 -> bg-brand-600,
+ * text-brand-600. Change a colour here and it updates across the whole site.
+ */
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-lexend), var(--font-noto-sans-bengali), system-ui, sans-serif;
+  --font-bengali: var(--font-noto-sans-bengali), var(--font-lexend), system-ui, sans-serif;
+
+  /* Saudi green */
+  --color-brand-50: #eef7f1;
+  --color-brand-100: #d6ece0;
+  --color-brand-200: #acd8bf;
+  --color-brand-300: #7dbf9a;
+  --color-brand-500: #13854a;
+  --color-brand-600: #006c35;
+  --color-brand-700: #005a2c;
+  --color-brand-800: #0a4526;
+  --color-brand-900: #08361e;
+  --color-brand-950: #041f11;
+
+  /* Lime accent – buttons and highlights only */
+  --color-accent-300: #d4f08a;
+  --color-accent-400: #bde35a;
+  --color-accent-500: #a6d13a;
+
+  /* Text and surfaces */
+  --color-ink: #1d2420;
+  --color-ink-soft: #4a544e;
+  --color-paper: #f7f8f4;
+  --color-line: #e3e7e1;
+}
+
+/* Smooth scrolling for the #services / #about / #contact links; padding keeps
+   section titles from hiding under the sticky header */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Bengali text (marked with lang="bn") uses the Bengali font */
+[lang="bn"] {
+  font-family: var(--font-bengali);
+}
+
+/* Visible outline for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+
+/* Subtle entrance for hero content */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-rise {
+  animation: rise 0.6s ease-out both;
+}
+
+/* Respect the visitor's "reduce motion" setting */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-rise {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}

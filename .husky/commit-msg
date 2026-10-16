@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Commitlint hook disabled - uncomment below and install commitlint to enable
+# To enable: npm install --save-dev @commitlint/cli @commitlint/config-conventional
+# npx --no -- commitlint --edit $1
