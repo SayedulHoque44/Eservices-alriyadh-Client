@@ -2,7 +2,7 @@
 import { LogoutOutlined, SettingOutlined } from "@ant-design/icons";
 import { Button, Spin } from "antd";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import BrandMark from "@/components/site/BrandMark";
@@ -11,12 +11,20 @@ import api from "@/lib/api";
 import AccountSettingsModal from "./AccountSettingsModal";
 import { useMe } from "./useAdmin";
 
+// Sections of the admin panel (tabs in the top bar)
+const NAV = [
+  { href: "/admin", label: "Akama" },
+  { href: "/admin/absher", label: "Absher" },
+];
+
 /**
  * Frame of the logged-in admin pages: checks the session, then shows the top
- * bar (logo, "View website", admin email, Account settings, Logout) and the page content.
+ * bar (logo, Akama / Absher tabs, "View website", admin email, Account settings, Logout)
+ * and the page content.
  */
 const AdminShell = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
+  const pathname = usePathname(); // highlights the current tab
   const me = useMe(); // GET /api/auth/me
   const [loggingOut, setLoggingOut] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false); // Account settings pop-up
@@ -51,9 +59,23 @@ const AdminShell = ({ children }: { children: React.ReactNode }) => {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex items-center gap-4">
             <BrandMark />
-            <span className="hidden rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 md:inline">
-              Akama Management
-            </span>
+            {/* Akama / Absher tabs */}
+            <nav className="flex gap-1">
+              {NAV.map(item => {
+                const active = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                      active ? "bg-brand-50 text-brand-700" : "text-ink-soft hover:text-brand-600"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Opens the Facebook page (link set in lib/site.ts) */}

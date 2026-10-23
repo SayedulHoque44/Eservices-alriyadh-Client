@@ -14,6 +14,14 @@ import api from "./api";
 
 // Folder inside the S3 bucket that holds this project's Akama images
 export const AKAMA_FOLDER = "eservices-alriyadh/akama";
+// Folder for Absher profile photos and card images (same upload-url step)
+export const ABSHER_FOLDER = "eservices-alriyadh/absher";
+
+// CloudFront CDN in front of the bucket (Client/.env), without a trailing slash
+const CDN_BASE_URL = (process.env.NEXT_PUBLIC_AWS_IMAGES_CDN_BASE_URL || "").replace(/\/+$/, "");
+
+/** Image address from its stored key: CDN base URL + "/" + key ("" when there is no key). */
+export const cdnImageUrl = (key?: string) => (key ? `${CDN_BASE_URL}/${key}` : "");
 
 export async function uploadImage(
   file: File,

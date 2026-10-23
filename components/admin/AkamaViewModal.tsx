@@ -60,11 +60,15 @@ const AkamaViewModal = ({ record, onClose, onEdit }: Props) => {
           <div className="grid gap-4 sm:grid-cols-[1fr_220px]">
             {/* Akama image (click to enlarge) */}
             <div className="flex items-center justify-center rounded-xl bg-brand-50/60 p-3">
-              <Image
-                src={record.imageUrl}
-                alt={`Akama of ${record.name}`}
-                style={{ maxHeight: 260, objectFit: "contain" }}
-              />
+              {record.imageUrl ? (
+                <Image
+                  src={record.imageUrl}
+                  alt={`Akama of ${record.name}`}
+                  style={{ maxHeight: 260, objectFit: "contain" }}
+                />
+              ) : (
+                <span className="text-sm text-ink-soft">No image yet – use Edit to add one</span>
+              )}
             </div>
 
             {/* QR code for the permanent public link */}

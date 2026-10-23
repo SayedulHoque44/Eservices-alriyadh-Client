@@ -9,14 +9,21 @@ import { maxUploadMb } from "@/lib/site";
 import { akamaFields, akamaSections } from "@/lib/akamaFields";
 import type { AdminAkama, AkamaDetails } from "@/lib/types";
 import { PUBLIC_WARNING } from "./akamaUtils";
-import { useSaveAkama } from "./useAdmin";
+import { useDeleteAkama, useSaveAkama } from "./useAdmin";
 
 /**
  * "Add New Akama" / "Edit Akama" pop-up form (opened from AkamaDashboard).
  *
  * Fields: the certificate details (Arabic labels, same order as the public card –
- * see lib/akamaFields.ts), image (with preview) and visibility. On save it uploads the image
- * directly (see lib/uploadImage.ts) and then sends JSON: POST /api/admin/akama (new) or PATCH /api/admin/akama/{id} (edit).
+ * see lib/akamaFields.ts), image (with preview) and visibility.
+ *
+ * Save order – nothing is uploaded until the details were accepted:
+ *   1. send the details: POST /api/admin/akama (new) or PATCH /{id} (edit). The
+ *      server checks every field here. A record without an image stays private.
+ *   2. if a new image was chosen: upload it (lib/uploadImage.ts), then attach its
+ *      key straight away together with the chosen visibility (PATCH /{id}).
+ *   3. a new record whose image step fails is deleted again (with its image), so
+ *      no half-made record or stray file is left behind.
  * The server checks everything again – the checks here just give faster feedback.
  */
 
@@ -45,10 +52,11 @@ const AkamaFormModal = ({ open, record, onClose, onCreated }: Props) => {
   const [form] = Form.useForm<Values>();
   const isPublic = Form.useWatch("isPublic", form); // live value, to show the public warning
   const save = useSaveAkama();
+  const remove = useDeleteAkama(); // undo a new record if its image step fails
   const [file, setFile] = useState<File | null>(null); // newly chosen image (not uploaded yet)
   const [fileError, setFileError] = useState(""); // message under the image field
   const [uploading, setUploading] = useState(false); // image upload in progress (before the save request)
-  const busy = uploading || save.isLoading;
+  const busy = uploading || save.isLoading || remove.isLoading;
 
   // Preview: the newly picked file (temporary blob: URL) or, when editing, the current image
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : record?.imageUrl), [file, record]);
@@ -72,33 +80,54 @@ const AkamaFormModal = ({ open, record, onClose, onCreated }: Props) => {
     return false; // upload happens when the form is saved
   };
 
-  // Submit: upload the image (if a new one was picked), then save the record as JSON
+  // Submit: save the details first, then upload + attach a new image (see the top of this file)
   const onFinish = async (values: Values) => {
-    if (!record && !file) {
+    // An image is required: a new record needs one picked, an existing one may already have it
+    const hasImage = !!record?.imageUrl;
+    if (!file && !hasImage) {
       setFileError("Please upload the Akama image.");
       message.error("Please upload the Akama image.");
       return;
     }
+
+    // 1. Details first – a rejected form uploads nothing. Without an image yet, keep it private.
+    let saved: AdminAkama;
     try {
-      // Image goes straight to storage via a presigned URL; only its key is saved
-      setUploading(true);
-      const imageKey = file ? await uploadImage(file) : undefined;
-      setUploading(false);
-      const saved = await save.mutateAsync({
-        id: record?.id,
-        body: { ...values, ...(imageKey && { imageKey }) },
-      });
-      message.success(record ? "Changes saved" : "Akama record created");
-      onClose();
-      // New record: let the dashboard open its details + QR code straight away
-      if (!record) onCreated?.(saved);
+      saved = await save.mutateAsync({ id: record?.id, body: { ...values, isPublic: hasImage ? values.isPublic : false } });
     } catch (error) {
       // Logged so the exact failing request is visible in the browser console
       console.error("Save Akama failed:", error);
       message.error(getErrorMessage(error));
-    } finally {
-      setUploading(false);
+      return;
     }
+
+    // 2. New image: upload it, then attach it together with the chosen visibility
+    if (file) {
+      try {
+        setUploading(true);
+        const imageKey = await uploadImage(file);
+        saved = await save.mutateAsync({ id: saved.id, body: { imageKey, isPublic: values.isPublic } });
+      } catch (error) {
+        console.error("Akama image upload failed:", error);
+        if (!record) {
+          // 3. New record: remove it again (the server deletes its image too)
+          await remove.mutateAsync(saved.id).catch(() => undefined);
+          message.error(`The record was not created because the image could not be uploaded. ${getErrorMessage(error)}`);
+        } else {
+          // Existing record: details are saved; only the image needs another try
+          setFile(null);
+          message.error(`Details saved, but the image could not be uploaded. Please choose it again. ${getErrorMessage(error)}`);
+        }
+        return;
+      } finally {
+        setUploading(false);
+      }
+    }
+
+    message.success(record ? "Changes saved" : "Akama record created");
+    onClose();
+    // New record: let the dashboard open its details + QR code straight away
+    if (!record) onCreated?.(saved);
   };
 
   return (

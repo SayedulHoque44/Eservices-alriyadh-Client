@@ -49,14 +49,17 @@ export default async function AkamaRecordPage({ params }: Props) {
           <CertificateBrandHeader />
         </div>
 
-        {/* Passport-style photo. Loaded through /api/public/akama/{id}/image, which re-checks visibility */}
-        <img
-          src={record.imageUrl}
-          alt={record.name}
-          width={165}
-          height={185}
-          className="h-[185px] w-[165px] object-cover"
-        />
+        {/* Passport-style photo. Loaded through /api/public/akama/{id}/image, which re-checks visibility.
+            (The server never lets a record without an image be public; this is just a guard.) */}
+        {record.imageUrl && (
+          <img
+            src={record.imageUrl}
+            alt={record.name}
+            width={165}
+            height={185}
+            className="h-[185px] w-[165px] object-cover"
+          />
+        )}
 
         {/* "Health Certificate" title in large bold green Arabic */}
         <h1

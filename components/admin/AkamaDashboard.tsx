@@ -164,15 +164,18 @@ const AkamaDashboard = () => {
       title: "Image",
       dataIndex: "imageUrl",
       width: 96,
-      render: (url: string, record) => (
-        <Image
-          src={url}
-          alt={`Akama of ${record.name}`}
-          width={72}
-          height={52}
-          style={{ objectFit: "cover", borderRadius: 8 }}
-        />
-      ),
+      render: (url: string, record) =>
+        url ? (
+          <Image
+            src={url}
+            alt={`Akama of ${record.name}`}
+            width={72}
+            height={52}
+            style={{ objectFit: "cover", borderRadius: 8 }}
+          />
+        ) : (
+          <span className="text-ink-soft">No image</span>
+        ),
     },
     {
       ...fieldColumn("name", 180),
